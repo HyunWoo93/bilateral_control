@@ -78,6 +78,7 @@ double B = 0.0;
 byte packet[3] = {NULL}
 byte theta_self[2] = {NULL}
 int theta_temp = 0.0;
+bool get_header = false;
 
 
 void loop() {
@@ -158,63 +159,28 @@ void serialEvent()
 {
   while (Serial.available())
   {
-    char inChar = (char)Serial.read();
-    if (bWaitEnd && inChar == '\n')
-    {
-      dataCnt = -1;
-      bWaitEnd = false;
-    }
-    else
-    {
-      if (dataCnt == -1)
-      {
-        if ( inChar == 'K')
-        {
-          dataCnt = 0;
-          dataMode = 0;
-        }
-        else if (inChar == 'C')
-        {
-          dataCnt = 0;
-          dataMode = 1;
-        }
-        else if (inChar == 'T')
-        {
-          dataCnt = 0;
-          dataMode = 2;
-        }
-        else if(inChar == 'B')
-        {
-          bSetBias = true;
-          bWaitEnd = true;
-        }
-      }
-      else
-      {
-        if (dataMode == 0)
-        {
-          K_s = ((float)inChar) / 100.0;
-          bWaitEnd = true;
-          dataCnt = 1;
-        }
-        else if (dataMode == 1)
-        {
-          B_s = ((float)inChar) / 1000.0;
-          bWaitEnd = true;
-          dataCnt = 1;
-        }
-        else if (dataMode == 2)
-        {
-          targetByte[dataCnt] = (int)inChar;
+    byte b = Serial.read();
+    
+    // header?
+    char c = (char)b;
+    if (c == 'K' || 'C'){
+      get_header = true;
 
-          dataCnt++;
-          if (dataCnt == 2)
-          {
-            theta_t = (256 * targetByte[0] + targetByte[1]) / 10000.0 - PI;
-            bWaitEnd = true;
-          }
-        }
+    }
+    else if(c == 'S' || 'P' || 'B'){
+      get_header = true;
+
+    }
+    else if(c == 'T'){
+      get_header = true;
+    }
+
+    // data
+    else{
+      if (b == 0x00){
+
       }
+      
     }
 
   }

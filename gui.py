@@ -10,36 +10,33 @@ def listener():
     while(True):
         #print(ex.m_port.readable())
         #print('a')
-        cnt = 0
+        
         while ex.m_port.readable():
 
             c = ex.m_port.read(1)
             print(c)
 
             # header?
-            if c == b'T':
+            if c == b'T' or b'Y':
                 ex.m_header = True;
 
-                ex.m_packet[cnt] = c;
-                cnt = cnt + 1
-
+                ex.listener_buffer.append(c)
+                
             # data
             else:
-                # header is arrived
-                if ex.m_header == True:
-                    ex.m_packet[cnt] = c;
-                    cnt = cnt + 1
+                # end of message
+                if c == 0x00:
+                    ex.message_from_master = ex.listener_buffer
+                    ex.m_header == False
+                    ex.listener_buffer = []
+
+                # when header is arrived
+                elif ex.m_header == True:
+                    ex.listener_buffer.append(c)
+                    
                 else:
                     pass
 
-
-            # getting data
-            if cnt == 3 :
-                if ex.m_packet[0] == b'T':
-                    temp = int(ex.m_packet[1])*256 + int(ex.m_packet[2])
-                    ex.m_theta = (temp/10000 - PI/2)*180/PI
-                    print(ex.m_theta)
-                    ex.m_header == False
 
 
 
@@ -55,10 +52,49 @@ def speaker():
             send(ex.m_port, 'T' + str(ex.s_theta))
             ex.m_response_complete = False
 
-def send(port, string):
-    port.write(string.encode())
-    port.write('\n'.encode())
+def send(port, array):
+    if port.in_waiting == 0:
+        for i in array:
+            port.write(i);
 
+def make_command(order, param, array):
+
+    if(order == 'K'):
+        temp = param*100
+        array.attend(b'K')
+        array.attend(bytes([temp / 256]))
+        array.attend(bytes([temp % 256]))
+        array.attend(0x00)
+
+    elif(order == 'C'):
+        temp = param*1000
+        array.attend(b'C')
+        array.attend(bytes([temp / 256]))
+        array.attend(bytes([temp % 256]))
+        array.attend(0x00)
+
+    elif(order == 'Bias'):
+        array.attend(b'B')
+        array.attend(0x00)
+
+    elif(order == 'Start'):
+        array.attend(b'S')
+        array.attend(0x00)
+
+    elif(order == 'Pause'):
+        array.attend(b'P')
+        array.attend(0x00)
+
+    elif(order == 'Target'):
+        temp = self.s_theta
+        array.attend(b'T')
+        array.attend(bytes([temp / 256]))
+        array.attend(bytes([temp % 256]))
+        array.attend(0x00)
+
+    else:
+        pass
+    array.append(order)
 
 
 class MyApp(QWidget):
@@ -73,14 +109,20 @@ class MyApp(QWidget):
         self.s_reaponse_complete = False
 
         self.bilateral_start = False
+        self.master_state = 0
+        self.slave_state = 0
 
-        self.m_theta = 0;
-        self.s_theta = 0;
 
-        self.m_packet = [None, None, None]
-        self.s_packet = [None, None, None]
-        self.m_header = False;
-        self.s_header = False;
+        self.m_theta = 0
+        self.s_theta = 0
+
+        self.command_to_master = []
+        self.command_to_slave = []
+        self.message_from_master = []
+        self.message_from_slave = []
+        self.listener_buffer = []
+        self.m_header = False
+        self.s_header = False
 
         self.listener_thread = threading.Thread(target=listener)
         self.speaker_thread = threading.Thread(target=speaker)
@@ -221,15 +263,23 @@ class MyApp(QWidget):
         self.listener_thread.start()
 
         # wait for serial connection
-        #time.sleep(3) # should be more than 2 sec
+        time.sleep(3) # should be more than 2 sec
 
-        # param command
-        #send(self.m_port, 'C')
+        # K command
+        make_command('K', m_k, self.command_to_master)
+        send(self.m_port, self.command_to_master)
+        time.sleep(0.1)
+
+        # C command
+        make_command('C', m_c, self.command_to_master)
+        send(self.m_port, self.command_to_master)
+        time.sleep(0.1)
 
 
 
-        if self.m_response == 'Y':
-            print("parameters is set.")
+        #while self.m_response != 'Y' && self.master_state == 0:
+        #    pass;
+        #print("parameters is set.")
         #ex.m_response = ''
 
 
