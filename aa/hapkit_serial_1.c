@@ -11,6 +11,7 @@ int dirPin = 8; // direction output pin for motor 1
 #define HANDLE_LENGTH (double)0.011 //110.00 mm
 #define SECTOR_RADIUS (double)0.082
 #define MOTOR_RADIUS (double)0.0055
+#define FRICTION_COMPEN (double)0.2
 
 void setup() {
   // put your setup code here, to run once:
@@ -47,7 +48,7 @@ int rawDiff = 0;
 int lastRawDiff = 0;
 int rawOffset = 0;
 int lastRawOffset = 0;
-const int flipThresh = 700;  // threshold to determine whether or not a flip over the 180 degree mark occurred
+const int flipThresh = 900;  // threshold to determine whether or not a flip over the 180 degree mark occurred
 boolean flipped = false;
 
 float thetaBias = 0;
@@ -72,6 +73,7 @@ boolean stringComplete = false;  // whether the string is complete
 
 // Force output variables
 double force = 0;           // force at the handle
+double w = 0;
 double Tp = 0;              // torque of the motor pulley
 double duty = 0;            // duty cylce (between 0 and 255)
 unsigned int output = 0;    // output command to the motor
@@ -94,6 +96,7 @@ void loop() {
   //*** Section 3. Assign a motor output force in Newtons *******
   //*************************************************************
   force = -K_s * (theta - theta_t) - B_s * (omega - omega_t);
+  w = cos(3*theta); // weight
 
   Tp = (MOTOR_RADIUS / SECTOR_RADIUS) * force;
 
@@ -108,7 +111,8 @@ void loop() {
   }
 
   // Compute the duty cycle required to generate Tp (torque at the motor pulley)c
-  duty = sqrt(abs(Tp) / 0.03);
+
+  duty = FRICTION_COMPEN + sqrt(abs(Tp) / 0.05);
 
   // Make sure the duty cycle is between 0 and 100%
   if (duty > 1)
@@ -287,9 +291,6 @@ void getVelocity()
   theta = (-0.0097086 * 1.5 * updatedPos + 7.33554) * PI / 180 - thetaBias; //in radian
   prev_theta = (-0.0097086 * 1.5 * prev_updatedPos + 7.33554) * PI / 180 - thetaBias; //in radian
 
-  if(abs(theta) > PI/4.0){
-    theta = PI/6.0;
-  }
 
   prev_omega_uf = omega;
 

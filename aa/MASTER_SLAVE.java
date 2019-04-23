@@ -150,6 +150,7 @@ void SLAVE_CONTROL()
 
 void BILATERAL_CONTROL()
 {
+  print("bilateral start");
   thread("sync_talker");
 }
 
@@ -169,12 +170,13 @@ void draw()
 
   // Master information
   text("POS: " + round(theta_m * 100)/100.0, 50, 315); 
+  text("POS_t: " + round(theta_s * 100)/100.0, 50, 330); 
 
   // Slave information
   text("POS: " + round(theta_s * 100)/100.0, 300, 315);
-  
+  text("POS_t: " + round(theta_m * 100)/100.0, 300, 330); 
 
-
+  //println(theta_m, theta_s);
   
 }
 
@@ -186,6 +188,7 @@ void serialEvent(Serial thisPort) {
   {
     // data from serial 1
     serialData_1 = port1.readStringUntil('\n');
+    println(serialData_1);
     if (serialData_1 != null && serialData_1.length() > 1)
     {
       //print(serialData_1);
