@@ -80,6 +80,7 @@ double B_s = 0.0;
 
 void loop() {
 
+  // send message
   if(Serial.available() == 0 ){
     Serial.write('P');
 
@@ -107,7 +108,7 @@ void loop() {
   }
 
   // Compute the duty cycle required to generate Tp (torque at the motor pulley)c
-  duty = 0.40 + sqrt(abs(Tp) / 0.06);
+  duty = sqrt(abs(Tp) / 0.03);
 
   // Make sure the duty cycle is between 0 and 100%
   if (duty > 1)
@@ -132,11 +133,13 @@ void serialEvent()
   while (Serial.available())
   {
     char inChar = (char)Serial.read();
+    // end of command
     if (bWaitEnd && inChar == '\n')
     {
       dataCnt = -1;
       bWaitEnd = false;
     }
+    // header
     else
     {
       if (dataCnt == -1)
@@ -163,6 +166,7 @@ void serialEvent()
           bWaitEnd = true;
         }
       }
+      // data
       else
       {
         if (dataMode == 0)
@@ -188,8 +192,8 @@ void serialEvent()
             prv_theta_t = theta_t;
             prv_time = time;
 
-            theta_t = ((256 * targetByte[0] + targetByte[1]) / 10000.0 - PI/2);
-            time = millis();
+            theta_t = ((256 * targetByte[0] + targetByte[1]) / 10000.0 - PI/2); // radian
+            time = millis(); //ms
 
             theta_t_diff = theta_t - prv_theta_t;
             time_diff = time - prv_time;

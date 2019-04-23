@@ -49,7 +49,7 @@ void setup()
     .setSize(150, 50)
     .setFont(font);
 
-  cp5.addButton("MASTER_CONTROL")
+  cp5.addButton("BILATERAL_CONTROL")
     .setPosition(50, 230)
     .setSize(150, 50)
     .setFont(font);
@@ -64,30 +64,12 @@ void setup()
     .setSize(150, 50)
     .setFont(font);
 
-  cp5.addButton("SLAVE_CONTROL")
-    .setPosition(300, 230)
-    .setSize(150, 50)
-    .setFont(font);
-
   loadSerialPort(); 
   //thread("sync_talker");
 
   //"\\\\.\\COM10"
 }
 
-void keyPressed() {
-  if (key == 'r') 
-  {
-    loadSerialPort();
-  } else if (key == 'c')
-  {
-    if (port1 != null)
-      port1.stop();
-    if (port2 != null)
-      port2.stop();
-    println("All ports are closed");
-  }
-}
 
 void MASTER_SERIAL()
 {
@@ -117,7 +99,6 @@ void MASTER_BIAS()
 void MASTER_CONTROL()
 {
   // to master
-  print('a');
   s_to_m_angle = (int)((theta_s * PI / 180 + PI/2) * 10000.0);
   port1.write('T');
   port1.write(s_to_m_angle / 256);
@@ -144,8 +125,7 @@ void SLAVE_SERIAL()
   port2.write((int)(Param_C[1] * 1000.0));
   port2.write('\n');
   delay(10);
-  
-  thread("sync_talker");
+
 
 }
 
@@ -166,6 +146,11 @@ void SLAVE_CONTROL()
   port2.write(m_to_s_angle % 256);
   port2.write('\n');
 
+}
+
+void BILATERAL_CONTROL()
+{
+  thread("sync_talker");
 }
 
 void draw()
@@ -190,10 +175,6 @@ void draw()
   
 
 
-
-    
-
-
   
 }
 
@@ -211,8 +192,8 @@ void serialEvent(Serial thisPort) {
       if (serialData_1.charAt(0) == 'P')
       {
         theta_m = float(serialData_1.substring(1, serialData_1.length() - 1)) * 180 / PI; //degree
-        prv_time_m = time_m;
-        time_m = millis();
+        //prv_time_m = time_m;
+        //time_m = millis();
 
       }
     }
@@ -228,8 +209,8 @@ void serialEvent(Serial thisPort) {
       if (serialData_2.charAt(0) == 'P')
       {
         theta_s = float(serialData_2.substring(1, serialData_2.length() - 1)) * 180 / PI;
-        prv_time_s = time_s;
-        time_s = millis();
+        //prv_time_s = time_s;
+        //time_s = millis();
 
       }
     }
